@@ -60,6 +60,31 @@ ruleTester.run("no-silent-pass", rule, {
       output: "test('t', async () => { await expect(component.getByText('hi')).toBeVisible(); });",
       errors: [{ messageId: "silentPass" }],
     },
+    // C: already-awaited assertion (the real-world Cal.com#28486 shape) — reuse the
+    // existing `await`, do NOT emit `await await expect(...)`.
+    {
+      code: "test('t', async () => { await expect(page.getByTestId('away-emoji')).toBeTruthy(); });",
+      output: "test('t', async () => { await expect(page.getByTestId('away-emoji')).toBeVisible(); });",
+      errors: [{ messageId: "silentPass", data: { matcher: "toBeTruthy", never: "falsy" } }],
+    },
+    // C edge: already-awaited negated form
+    {
+      code: "test('t', async () => { await expect(page.locator('.x')).not.toBeNull(); });",
+      output: "test('t', async () => { await expect(page.locator('.x')).toBeVisible(); });",
+      errors: [{ messageId: "silentPass" }],
+    },
+    // edge: return position (async) — fix prepends await, stays valid
+    {
+      code: "const f = async () => { return expect(page.getByRole('button')).toBeDefined(); };",
+      output: "const f = async () => { return await expect(page.getByRole('button')).toBeVisible(); };",
+      errors: [{ messageId: "silentPass" }],
+    },
+    // edge: expect.soft on an inline locator is still caught (and normalized to a hard web-first assertion)
+    {
+      code: "test('t', async () => { await expect.soft(page.getByText('x')).toBeTruthy(); });",
+      output: "test('t', async () => { await expect(page.getByText('x')).toBeVisible(); });",
+      errors: [{ messageId: "silentPass" }],
+    },
     // B: synchronous callback — still REPORTED, but NOT auto-fixed, because injecting
     // `await` into a non-async function would be a SyntaxError on `eslint --fix`.
     {

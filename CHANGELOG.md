@@ -2,6 +2,14 @@
 
 All notable changes are documented here. Format based on [Keep a Changelog](https://keepachangelog.com/); this project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.3] — 2026-06-27
+
+### Fixed
+- Auto-fix no longer emits a doubled `await await expect(...)` when the violation is **already awaited** (`await expect(locator).toBeTruthy()` — the most common real-world shape, e.g. [calcom/cal.diy#28486](https://github.com/calcom/cal.diy/pull/28486)). The existing `await` is now reused.
+
+### Tests
+- Added edge cases: already-awaited positive/negated assertions, `return`-position fixes, and `expect.soft(<locator>)`.
+
 ## [0.1.2] — 2026-06-27
 
 ### Fixed

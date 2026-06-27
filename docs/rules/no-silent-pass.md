@@ -60,9 +60,10 @@ inserting `await`:
 Because the fix inserts `await`, it is applied **only inside an `async`
 function** — the usual Playwright test callback. In a synchronous callback the
 violation is still reported but left unfixed, so `--fix` never emits an `await`
-outside an async function (which would be a `SyntaxError`). `toBeVisible()` is a
-sensible default; if the test means to assert text or attachment instead, adjust
-the matcher.
+outside an async function (which would be a `SyntaxError`). When the assertion is
+**already awaited** (`await expect(loc).toBeTruthy()`), the existing `await` is
+reused — the fix never emits `await await`. `toBeVisible()` is a sensible default;
+if the test means to assert text or attachment instead, adjust the matcher.
 
 ## Options
 
