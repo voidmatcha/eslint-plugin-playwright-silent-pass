@@ -1,19 +1,20 @@
-"use strict";
+import noSilentPass from "./rules/no-silent-pass";
 
-const noSilentPass = require("./rules/no-silent-pass");
-
-const pkg = require("../package.json");
+const { name, version } = require("../package.json") as {
+  name: string;
+  version: string;
+};
 
 const plugin = {
-  meta: { name: pkg.name, version: pkg.version },
+  meta: { name, version },
   rules: {
     "no-silent-pass": noSilentPass,
   },
+  configs: {} as Record<string, unknown>,
 };
 
-// Flat config (ESLint 9+)
-// Config naming mirrors eslint-plugin-playwright: `flat/recommended` (flat) +
-// `recommended` (legacy .eslintrc).
+// Flat config (ESLint 9+) + legacy `.eslintrc`. Config naming mirrors
+// eslint-plugin-playwright: `flat/recommended` (flat) + `recommended` (legacy).
 plugin.configs = {
   "flat/recommended": {
     plugins: { "playwright-silent-pass": plugin },
@@ -29,4 +30,4 @@ plugin.configs = {
   },
 };
 
-module.exports = plugin;
+export = plugin;

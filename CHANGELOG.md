@@ -2,6 +2,17 @@
 
 All notable changes are documented here. Format based on [Keep a Changelog](https://keepachangelog.com/); this project follows [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] — 2026-06-27
+
+### Changed
+- Migrated the source to **TypeScript** (`src/*.ts`, built to `lib/` via `tsc`, now ships `.d.ts` types). The rule is authored with `@typescript-eslint/utils` (`RuleCreator` + `TSESTree`), mirroring `eslint-plugin-playwright`'s conventions so the rule ports cleanly upstream.
+- Tests moved to **vitest** + `@typescript-eslint/rule-tester`.
+- Pinned dependencies exactly to the latest compatible set (typescript-eslint 8.62.0, TypeScript 5.9.3, ESLint 9.39.4, vitest 4.1.9). TypeScript 6 / ESLint 10 are intentionally excluded — typescript-eslint 8.62 does not support them yet.
+- Added an `exports` map and tightened the ESLint peer range to `>=8.57.0`.
+
+### Notes
+- **No rule behavior change** — detection, polarity, and autofix semantics are identical; the full test suite (incl. async/sync, already-awaited, return-position, `expect.soft`, and false-positive guards) was ported and is green.
+
 ## [0.1.3] — 2026-06-27
 
 ### Fixed

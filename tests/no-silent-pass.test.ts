@@ -1,28 +1,25 @@
-"use strict";
+import { RuleTester } from "@typescript-eslint/rule-tester";
+import { afterAll, describe, it } from "vitest";
+import rule from "../src/rules/no-silent-pass";
 
-const { RuleTester } = require("eslint");
-const rule = require("../lib/rules/no-silent-pass");
+RuleTester.afterAll = afterAll;
+RuleTester.describe = describe;
+RuleTester.it = it;
+RuleTester.itOnly = it.only;
 
-const ruleTester = new RuleTester({
-  languageOptions: { ecmaVersion: 2022, sourceType: "module" },
-});
+const ruleTester = new RuleTester();
 
 ruleTester.run("no-silent-pass", rule, {
   valid: [
-    // web-first assertions — the correct form
     "await expect(page.getByText('Welcome back')).toBeVisible();",
     "await expect(page.locator('.user-badge')).toBeHidden();",
     "await expect(page.getByRole('button')).toHaveText('Save');",
-    // non-locator subjects genuinely need these matchers
     "expect(count).toBeDefined();",
     "expect(user).not.toBeNull();",
     "expect(result).toBeTruthy();",
     "expect(items.length).toBeTruthy();",
-    // a real awaited boolean read (handled by prefer-web-first-assertions, not us)
     "expect(await page.locator('.x').isVisible()).toBe(true);",
-    // identifier locator NOT flagged by default (no type info)
     "const btn = page.getByRole('button'); expect(btn).toBeDefined();",
-    // generic chain methods without a Playwright anchor are NOT flagged
     "expect(users.filter((u) => u.active)).toBeDefined();",
     "expect(items.first()).toBeTruthy();",
     "expect(rows.nth(2)).not.toBeNull();",
@@ -30,63 +27,79 @@ ruleTester.run("no-silent-pass", rule, {
   invalid: [
     {
       code: "test('t', async () => { expect(page.getByText('Welcome back')).toBeDefined(); });",
-      output: "test('t', async () => { await expect(page.getByText('Welcome back')).toBeVisible(); });",
-      errors: [{ messageId: "silentPass", data: { matcher: "toBeDefined", never: "undefined" } }],
+      output:
+        "test('t', async () => { await expect(page.getByText('Welcome back')).toBeVisible(); });",
+      errors: [
+        { messageId: "silentPass", data: { matcher: "toBeDefined", never: "undefined" } },
+      ],
     },
     {
       code: "test('t', async () => { expect(page.locator('.user-badge')).not.toBeNull(); });",
-      output: "test('t', async () => { await expect(page.locator('.user-badge')).toBeVisible(); });",
-      errors: [{ messageId: "silentPass", data: { matcher: "not.toBeNull", never: "null" } }],
+      output:
+        "test('t', async () => { await expect(page.locator('.user-badge')).toBeVisible(); });",
+      errors: [
+        { messageId: "silentPass", data: { matcher: "not.toBeNull", never: "null" } },
+      ],
     },
-    // A: positive toBeTruthy must report the reason "falsy" (a Locator is never falsy), not "undefined"
+    // A: positive toBeTruthy reports the reason "falsy", not "undefined"
     {
       code: "test('t', async () => { expect(page.getByRole('button', { name: 'Save' })).toBeTruthy(); });",
-      output: "test('t', async () => { await expect(page.getByRole('button', { name: 'Save' })).toBeVisible(); });",
-      errors: [{ messageId: "silentPass", data: { matcher: "toBeTruthy", never: "falsy" } }],
+      output:
+        "test('t', async () => { await expect(page.getByRole('button', { name: 'Save' })).toBeVisible(); });",
+      errors: [
+        { messageId: "silentPass", data: { matcher: "toBeTruthy", never: "falsy" } },
+      ],
     },
     {
       code: "test('t', async () => { expect(page.getByTestId('row').first()).not.toBeUndefined(); });",
-      output: "test('t', async () => { await expect(page.getByTestId('row').first()).toBeVisible(); });",
+      output:
+        "test('t', async () => { await expect(page.getByTestId('row').first()).toBeVisible(); });",
       errors: [{ messageId: "silentPass" }],
     },
     {
       code: "test('t', async () => { expect(page.locator('.menu').filter({ hasText: 'A' })).not.toBeFalsy(); });",
-      output: "test('t', async () => { await expect(page.locator('.menu').filter({ hasText: 'A' })).toBeVisible(); });",
+      output:
+        "test('t', async () => { await expect(page.locator('.menu').filter({ hasText: 'A' })).toBeVisible(); });",
       errors: [{ messageId: "silentPass" }],
     },
-    // subject need not be `page` — any inline locator chain counts
     {
       code: "test('t', async () => { expect(component.getByText('hi')).toBeDefined(); });",
-      output: "test('t', async () => { await expect(component.getByText('hi')).toBeVisible(); });",
+      output:
+        "test('t', async () => { await expect(component.getByText('hi')).toBeVisible(); });",
       errors: [{ messageId: "silentPass" }],
     },
     // C: already-awaited assertion (the real-world Cal.com#28486 shape) — reuse the
     // existing `await`, do NOT emit `await await expect(...)`.
     {
       code: "test('t', async () => { await expect(page.getByTestId('away-emoji')).toBeTruthy(); });",
-      output: "test('t', async () => { await expect(page.getByTestId('away-emoji')).toBeVisible(); });",
-      errors: [{ messageId: "silentPass", data: { matcher: "toBeTruthy", never: "falsy" } }],
+      output:
+        "test('t', async () => { await expect(page.getByTestId('away-emoji')).toBeVisible(); });",
+      errors: [
+        { messageId: "silentPass", data: { matcher: "toBeTruthy", never: "falsy" } },
+      ],
     },
     // C edge: already-awaited negated form
     {
       code: "test('t', async () => { await expect(page.locator('.x')).not.toBeNull(); });",
-      output: "test('t', async () => { await expect(page.locator('.x')).toBeVisible(); });",
+      output:
+        "test('t', async () => { await expect(page.locator('.x')).toBeVisible(); });",
       errors: [{ messageId: "silentPass" }],
     },
     // edge: return position (async) — fix prepends await, stays valid
     {
       code: "const f = async () => { return expect(page.getByRole('button')).toBeDefined(); };",
-      output: "const f = async () => { return await expect(page.getByRole('button')).toBeVisible(); };",
+      output:
+        "const f = async () => { return await expect(page.getByRole('button')).toBeVisible(); };",
       errors: [{ messageId: "silentPass" }],
     },
-    // edge: expect.soft on an inline locator is still caught (and normalized to a hard web-first assertion)
+    // edge: expect.soft on an inline locator is still caught (normalized to web-first)
     {
       code: "test('t', async () => { await expect.soft(page.getByText('x')).toBeTruthy(); });",
-      output: "test('t', async () => { await expect(page.getByText('x')).toBeVisible(); });",
+      output:
+        "test('t', async () => { await expect(page.getByText('x')).toBeVisible(); });",
       errors: [{ messageId: "silentPass" }],
     },
-    // B: synchronous callback — still REPORTED, but NOT auto-fixed, because injecting
-    // `await` into a non-async function would be a SyntaxError on `eslint --fix`.
+    // B: sync callback — reported, but NOT auto-fixed (await would be a SyntaxError)
     {
       code: "test('t', () => { expect(page.getByText('hi')).toBeDefined(); });",
       output: null,
@@ -101,5 +114,3 @@ ruleTester.run("no-silent-pass", rule, {
     },
   ],
 });
-
-console.log("no-silent-pass (playwright): all assertions passed");
