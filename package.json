@@ -1,0 +1,44 @@
+{
+  "name": "eslint-plugin-playwright-silent-pass",
+  "version": "0.1.0",
+  "description": "ESLint rule that flags Playwright assertions that always pass — a Locator is never undefined/null/falsy, so expect(locator).toBeDefined()/.toBeTruthy()/.not.toBeNull() can never fail. Auto-fixable.",
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "playwright",
+    "testing",
+    "assertions",
+    "silent-pass"
+  ],
+  "license": "Apache-2.0",
+  "author": "voidmatcha (https://github.com/voidmatcha)",
+  "homepage": "https://github.com/voidmatcha/eslint-plugin-playwright-silent-pass#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voidmatcha/eslint-plugin-playwright-silent-pass.git"
+  },
+  "bugs": {
+    "url": "https://github.com/voidmatcha/eslint-plugin-playwright-silent-pass/issues"
+  },
+  "type": "commonjs",
+  "main": "lib/index.js",
+  "exports": "./lib/index.js",
+  "files": [
+    "lib",
+    "docs"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node tests/no-silent-pass.test.js",
+    "prepublishOnly": "node tests/no-silent-pass.test.js"
+  },
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}
