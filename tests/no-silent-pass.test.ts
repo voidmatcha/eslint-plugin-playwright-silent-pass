@@ -23,6 +23,11 @@ ruleTester.run("no-silent-pass", rule, {
     "expect(users.filter((u) => u.active)).toBeDefined();",
     "expect(items.first()).toBeTruthy();",
     "expect(rows.nth(2)).not.toBeNull();",
+    // terminal returns a Promise/value, not a Locator — not flagged (prefer-web-first territory)
+    "expect(page.locator('.x').count()).toBeTruthy();",
+    "expect(page.getByRole('button').isVisible()).not.toBeFalsy();",
+    // only expect.soft is treated as expect; expect.<other> is not
+    "expect.notSoft(page.locator('.x')).toBeTruthy();",
   ],
   invalid: [
     {
@@ -92,16 +97,37 @@ ruleTester.run("no-silent-pass", rule, {
         "const f = async () => { return await expect(page.getByRole('button')).toBeVisible(); };",
       errors: [{ messageId: "silentPass" }],
     },
-    // edge: expect.soft on an inline locator is still caught (normalized to web-first)
+    // edge: expect.soft is caught AND the soft callee is preserved in the fix
     {
       code: "test('t', async () => { await expect.soft(page.getByText('x')).toBeTruthy(); });",
       output:
-        "test('t', async () => { await expect(page.getByText('x')).toBeVisible(); });",
+        "test('t', async () => { await expect.soft(page.getByText('x')).toBeVisible(); });",
+      errors: [{ messageId: "silentPass" }],
+    },
+    // matcher carrying a (side-effecting) argument — reported, but NOT auto-fixed,
+    // since the rewrite would drop the argument.
+    {
+      code: "test('t', async () => { expect(page.locator('.x')).toBeTruthy(sideEffect()); });",
+      output: null,
       errors: [{ messageId: "silentPass" }],
     },
     // B: sync callback — reported, but NOT auto-fixed (await would be a SyntaxError)
     {
       code: "test('t', () => { expect(page.getByText('hi')).toBeDefined(); });",
+      output: null,
+      errors: [{ messageId: "silentPass" }],
+    },
+    // await-boundary: a class field initializer disallows await even when the
+    // outer scope is async — reported, but NOT auto-fixed.
+    {
+      code: "class C { field = expect(page.locator('.x')).toBeTruthy(); }",
+      output: null,
+      errors: [{ messageId: "silentPass" }],
+    },
+    // comment between expect() and the matcher — reported, but NOT auto-fixed
+    // (the rewrite would drop the comment).
+    {
+      code: "test('t', async () => { await expect(page.getByText('x')) /* keep */ .toBeDefined(); });",
       output: null,
       errors: [{ messageId: "silentPass" }],
     },

@@ -2,6 +2,18 @@
 
 All notable changes are documented here. Format based on [Keep a Changelog](https://keepachangelog.com/); this project follows [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] — 2026-06-27
+
+### Fixed
+- Auto-fix no longer inserts `await` inside a **class field initializer or static block**, where `await` is illegal even when the outer function is `async` (it would produce a `SyntaxError` on `--fix`). Those are now report-only.
+- Auto-fix no longer **drops a comment** placed between `expect(...)` and the matcher (e.g. `expect(loc) /* why */ .toBeTruthy()`); the fix is skipped (report-only) when such a comment exists.
+- Auto-fix now **preserves `expect.soft(...)`** instead of silently converting a soft assertion to a hard one.
+- Auto-fix is **skipped when the matcher carries an argument** (these matchers take none, but a side-effecting arg must not be dropped).
+- No longer flags (or mis-fixes) a chain that ends in a **value-returning method** like `.count()` / `.isVisible()` — those return a Promise, not a Locator, so they belong to `prefer-web-first-assertions`, not here.
+- `expect.soft` recognition is tightened to **only `expect.soft(...)`** (not `expect.<other>(...)` or computed `expect[fn](...)`).
+
+_(These hardenings surfaced via two rounds of cross-model review of the upstream `eslint-plugin-playwright` port of this rule.)_
+
 ## [0.2.0] — 2026-06-27
 
 ### Changed

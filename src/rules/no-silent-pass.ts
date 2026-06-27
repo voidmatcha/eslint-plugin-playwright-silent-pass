@@ -16,6 +16,19 @@ const LOCATOR_METHODS = new Set([
   "getByTestId",
 ]);
 
+// Methods that return a Locator: the creators above plus chainable locator-returning
+// methods. A chain that ENDS in anything else (count, isVisible, textContent, ...)
+// yields a value or Promise, not a Locator, so it must not be treated as one.
+const LOCATOR_RETURNING = new Set([
+  ...LOCATOR_METHODS,
+  "first",
+  "last",
+  "nth",
+  "filter",
+  "and",
+  "or",
+]);
+
 // matcher -> always holds for a Locator in this polarity
 const POSITIVE_ALWAYS_TRUE = new Set(["toBeDefined", "toBeTruthy"]);
 const NEGATED_ALWAYS_TRUE = new Set(["toBeNull", "toBeUndefined", "toBeFalsy"]);
@@ -54,18 +67,20 @@ function chainMethodNames(node: TSESTree.Node): string[] {
   return names;
 }
 
-/** An inline Playwright locator chain (anchored by a locator method). */
+/**
+ * An inline Playwright locator chain: anchored by a creator (`locator` / `getBy*`)
+ * AND still a Locator at the end. The terminal call must return a Locator, so
+ * `page.locator('.x').count()` (a Promise) is not treated as one.
+ */
 function isInlineLocator(node: TSESTree.Node | undefined): boolean {
   if (!node || node.type !== AST_NODE_TYPES.CallExpression) return false;
+  const terminal = memberName(node.callee);
+  if (!terminal || !LOCATOR_RETURNING.has(terminal)) return false;
   return chainMethodNames(node).some((n) => LOCATOR_METHODS.has(n));
 }
 
-/**
- * True when the nearest enclosing function is `async`. The autofix injects
- * `await`, which is only legal in an async function — fixing in a sync callback
- * would emit `await` in a sync scope (a SyntaxError on `eslint --fix`).
- */
-function enclosingFnIsAsync(node: TSESTree.Node): boolean {
+/** True when an `await` may legally be inserted at `node` (async scope, and not inside a class field initializer or static block). */
+function awaitIsAllowed(node: TSESTree.Node): boolean {
   let cur: TSESTree.Node | undefined = node.parent;
   while (cur) {
     if (
@@ -74,6 +89,12 @@ function enclosingFnIsAsync(node: TSESTree.Node): boolean {
       cur.type === AST_NODE_TYPES.ArrowFunctionExpression
     ) {
       return cur.async;
+    }
+    if (
+      cur.type === AST_NODE_TYPES.PropertyDefinition ||
+      cur.type === AST_NODE_TYPES.StaticBlock
+    ) {
+      return false;
     }
     cur = cur.parent;
   }
@@ -150,8 +171,12 @@ export default createRule<Options, MessageIds>({
           exCallee.type === AST_NODE_TYPES.Identifier
             ? exCallee.name
             : exCallee.type === AST_NODE_TYPES.MemberExpression &&
-                exCallee.object.type === AST_NODE_TYPES.Identifier
-              ? exCallee.object.name // expect.soft(...)
+                !exCallee.computed &&
+                exCallee.object.type === AST_NODE_TYPES.Identifier &&
+                exCallee.object.name === "expect" &&
+                exCallee.property.type === AST_NODE_TYPES.Identifier &&
+                exCallee.property.name === "soft"
+              ? "expect" // only expect.soft(...), not expect.anythingElse(...)
               : null;
         if (exName !== "expect") return;
         if (obj.arguments.length !== 1) return;
@@ -177,17 +202,27 @@ export default createRule<Options, MessageIds>({
           messageId: "silentPass",
           data: { matcher: negated ? `not.${matcher}` : matcher, never },
           fix(fixer) {
-            // Only auto-fix the high-confidence inline-locator case, and only in
-            // an async scope (`await` in a sync callback is a SyntaxError). If the
-            // assertion is already awaited, reuse that `await` (no `await await`).
+            // Auto-fix only the safe inline-locator case; each guard below bails to report-only.
+            // - await must be legal here (no sync callback / class field / static block)
+            // - no comment between expect(...) and the matcher (the rewrite would drop it)
+            // - the matcher takes no argument (don't drop a side-effecting one)
+            // The fix preserves the expect callee (keeps expect.soft) and reuses any existing await.
             if (!isInlineLocator(arg)) return null;
-            if (!enclosingFnIsAsync(node)) return null;
+            if (!awaitIsAllowed(node)) return null;
+            if (node.arguments.length > 0) return null;
+            if (
+              sourceCode.getCommentsInside(node).length >
+              sourceCode.getCommentsInside(arg).length
+            ) {
+              return null;
+            }
             const alreadyAwaited =
               node.parent?.type === AST_NODE_TYPES.AwaitExpression;
             const prefix = alreadyAwaited ? "" : "await ";
+            const calleeText = sourceCode.getText(obj.callee);
             return fixer.replaceText(
               node,
-              `${prefix}expect(${argText}).toBeVisible()`,
+              `${prefix}${calleeText}(${argText}).toBeVisible()`,
             );
           },
         });
