@@ -29,33 +29,42 @@ ruleTester.run("no-silent-pass", rule, {
   ],
   invalid: [
     {
-      code: "expect(page.getByText('Welcome back')).toBeDefined();",
-      output: "await expect(page.getByText('Welcome back')).toBeVisible();",
+      code: "test('t', async () => { expect(page.getByText('Welcome back')).toBeDefined(); });",
+      output: "test('t', async () => { await expect(page.getByText('Welcome back')).toBeVisible(); });",
       errors: [{ messageId: "silentPass", data: { matcher: "toBeDefined", never: "undefined" } }],
     },
     {
-      code: "expect(page.locator('.user-badge')).not.toBeNull();",
-      output: "await expect(page.locator('.user-badge')).toBeVisible();",
+      code: "test('t', async () => { expect(page.locator('.user-badge')).not.toBeNull(); });",
+      output: "test('t', async () => { await expect(page.locator('.user-badge')).toBeVisible(); });",
+      errors: [{ messageId: "silentPass", data: { matcher: "not.toBeNull", never: "null" } }],
+    },
+    // A: positive toBeTruthy must report the reason "falsy" (a Locator is never falsy), not "undefined"
+    {
+      code: "test('t', async () => { expect(page.getByRole('button', { name: 'Save' })).toBeTruthy(); });",
+      output: "test('t', async () => { await expect(page.getByRole('button', { name: 'Save' })).toBeVisible(); });",
+      errors: [{ messageId: "silentPass", data: { matcher: "toBeTruthy", never: "falsy" } }],
+    },
+    {
+      code: "test('t', async () => { expect(page.getByTestId('row').first()).not.toBeUndefined(); });",
+      output: "test('t', async () => { await expect(page.getByTestId('row').first()).toBeVisible(); });",
       errors: [{ messageId: "silentPass" }],
     },
     {
-      code: "expect(page.getByRole('button', { name: 'Save' })).toBeTruthy();",
-      output: "await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();",
+      code: "test('t', async () => { expect(page.locator('.menu').filter({ hasText: 'A' })).not.toBeFalsy(); });",
+      output: "test('t', async () => { await expect(page.locator('.menu').filter({ hasText: 'A' })).toBeVisible(); });",
       errors: [{ messageId: "silentPass" }],
     },
+    // subject need not be `page` — any inline locator chain counts
     {
-      code: "expect(page.getByTestId('row').first()).not.toBeUndefined();",
-      output: "await expect(page.getByTestId('row').first()).toBeVisible();",
+      code: "test('t', async () => { expect(component.getByText('hi')).toBeDefined(); });",
+      output: "test('t', async () => { await expect(component.getByText('hi')).toBeVisible(); });",
       errors: [{ messageId: "silentPass" }],
     },
+    // B: synchronous callback — still REPORTED, but NOT auto-fixed, because injecting
+    // `await` into a non-async function would be a SyntaxError on `eslint --fix`.
     {
-      code: "expect(page.locator('.menu').filter({ hasText: 'A' })).not.toBeFalsy();",
-      output: "await expect(page.locator('.menu').filter({ hasText: 'A' })).toBeVisible();",
-      errors: [{ messageId: "silentPass" }],
-    },
-    {
-      code: "expect(component.getByText('hi')).toBeDefined();",
-      output: "await expect(component.getByText('hi')).toBeVisible();",
+      code: "test('t', () => { expect(page.getByText('hi')).toBeDefined(); });",
+      output: null,
       errors: [{ messageId: "silentPass" }],
     },
     // identifier flagged only with the opt-in heuristic — report only, NOT autofixed

@@ -50,15 +50,19 @@ expect(await page.locator('.x').isVisible()).toBe(true); // covered by prefer-we
 ## Fix
 
 The autofix rewrites inline-locator violations to the common web-first intent,
-inserting `await` (Playwright test callbacks are always `async`):
+inserting `await`:
 
 ```diff
 - expect(page.getByText('Welcome back')).toBeDefined();
 + await expect(page.getByText('Welcome back')).toBeVisible();
 ```
 
-`toBeVisible()` is a sensible default; if the test means to assert text or
-attachment instead, adjust the matcher.
+Because the fix inserts `await`, it is applied **only inside an `async`
+function** — the usual Playwright test callback. In a synchronous callback the
+violation is still reported but left unfixed, so `--fix` never emits an `await`
+outside an async function (which would be a `SyntaxError`). `toBeVisible()` is a
+sensible default; if the test means to assert text or attachment instead, adjust
+the matcher.
 
 ## Options
 
