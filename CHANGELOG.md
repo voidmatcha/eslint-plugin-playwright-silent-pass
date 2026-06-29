@@ -1,3 +1,9 @@
+## [0.2.3] 2026-06-30
+
+### Documentation
+
+- Updated the e2e-skills proof-point copy to reference 10+ merged upstream PRs and the shared representative project set: Storybook, code-server, Strapi, SvelteKit, Cal.com, and more.
+
 # Changelog
 
 All notable changes are documented here. Format based on [Keep a Changelog](https://keepachangelog.com/); this project follows [Semantic Versioning](https://semver.org/).

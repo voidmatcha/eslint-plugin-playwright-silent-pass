@@ -25,7 +25,7 @@ A Playwright locator is a **synchronous object** — it is always defined, never
 
 `eslint-plugin-playwright`'s `prefer-web-first-assertions` only flags the **awaited-method** form — `expect(await locator.isVisible()).toBe(true)`. It does **not** flag the bare-locator always-true form above. `no-restricted-matchers` can ban a matcher globally but isn't locator-aware, so it false-positives on legitimate `expect(count).toBeDefined()`. This rule fills that gap and is designed to avoid false positives: it only fires when the `expect` subject is an inline chain anchored in a Playwright locator method, so plain `expect(arr.filter(x)).toBeDefined()` is never touched.
 
-The always-pass class isn't hypothetical — fixes for it have been reviewed and merged into Ghost, code-server, SvelteKit, Strapi and others (see [e2e-skills · Proven in OSS](https://github.com/voidmatcha/e2e-skills#proven-in-open-source), 8 merged PRs). This rule catches the inline-locator slice of that class automatically.
+The always-pass class isn't hypothetical — fixes for it have been reviewed and merged into Storybook, code-server, Strapi, SvelteKit, Cal.com, and more (see [e2e-skills · Proven in OSS](https://github.com/voidmatcha/e2e-skills#proven-in-open-source), 10+ merged PRs). This rule catches the inline-locator slice of that class automatically.
 
 ## Install
 
