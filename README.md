@@ -1,5 +1,17 @@
 # ESLint Plugin: Playwright Silent Pass
 
+> [!WARNING]
+> **Deprecated — use the official plugin instead.**
+>
+> This rule was contributed upstream and now ships in [`eslint-plugin-playwright`](https://github.com/mskelton/eslint-plugin-playwright) as [`no-unnecessary-assertions`](https://github.com/mskelton/eslint-plugin-playwright/blob/main/docs/rules/no-unnecessary-assertions.md), released in [v2.11.0](https://github.com/mskelton/eslint-plugin-playwright/releases/tag/v2.11.0) ([PR #470](https://github.com/mskelton/eslint-plugin-playwright/pull/470)). It is enabled by that plugin's `recommended` config, so you get this check with no extra package:
+>
+> ```bash
+> npm rm eslint-plugin-playwright-silent-pass
+> npm i -D eslint-plugin-playwright@^2.11.0
+> ```
+>
+> This package is deprecated on npm and no longer maintained. The Cypress counterpart, [`eslint-plugin-cypress-silent-pass`](https://github.com/voidmatcha/eslint-plugin-cypress-silent-pass), **is** still maintained — Cypress has no official equivalent.
+
 [![npm](https://img.shields.io/npm/v/eslint-plugin-playwright-silent-pass?style=flat-square&labelColor=black&color=1FC07C)](https://www.npmjs.com/package/eslint-plugin-playwright-silent-pass)
 [![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=flat-square&labelColor=black)](https://playwright.dev)
 [![ESLint flat config](https://img.shields.io/badge/ESLint_9-flat_config-4B32C3?style=flat-square&labelColor=black&logo=eslint&logoColor=white)](https://eslint.org)
@@ -7,7 +19,7 @@
 [![Part of e2e-skills](https://img.shields.io/badge/part_of-e2e--skills-D97757?style=flat-square&labelColor=black)](https://github.com/voidmatcha/e2e-skills)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-37B0E6?style=flat-square&labelColor=black)](./LICENSE)
 
-One ESLint rule for a blind spot that `eslint-plugin-playwright` does **not** cover: assertions on a Playwright `Locator` that **can never fail**.
+One ESLint rule for assertions on a Playwright `Locator` that **can never fail**. This was a blind spot in `eslint-plugin-playwright` when this package was written; it is now covered upstream (see the notice above), and this package is kept only for historical reference.
 
 ```js
 // ❌ always passes — a Locator is never undefined / null / falsy
