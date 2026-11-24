@@ -10,7 +10,7 @@
 > npm i -D eslint-plugin-playwright@^2.11.0
 > ```
 >
-> This package is deprecated on npm and no longer maintained. The Cypress counterpart, [`eslint-plugin-cypress-silent-pass`](https://github.com/voidmatcha/eslint-plugin-cypress-silent-pass), **is** still maintained — Cypress has no official equivalent.
+> This package is deprecated on npm and no longer maintained, and this repository is archived. The Cypress counterpart, [`eslint-plugin-cypress-silent-pass`](https://github.com/voidmatcha/eslint-plugin-cypress-silent-pass), is also retired: its rule now ships in `eslint-plugin-cypress` v7.2.0 as the opt-in [`cypress/no-unnecessary-assertions`](https://github.com/cypress-io/eslint-plugin-cypress/blob/master/docs/rules/no-unnecessary-assertions.md). For Cypress this is an assertion-clarity rule: the queued `cy.get()` still fails when the element is missing, so the test does not always pass.
 
 [![npm](https://img.shields.io/npm/v/eslint-plugin-playwright-silent-pass?style=flat-square&labelColor=black&color=1FC07C)](https://www.npmjs.com/package/eslint-plugin-playwright-silent-pass)
 [![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=flat-square&labelColor=black)](https://playwright.dev)
@@ -127,7 +127,7 @@ Catches the **mechanical, inline** always-true case. Semantic silent-pass smells
 
 Part of a small family for catching tests that pass but prove nothing:
 
-- **[eslint-plugin-cypress-silent-pass](https://github.com/voidmatcha/eslint-plugin-cypress-silent-pass)** — the same always-pass check for Cypress.
+- **[eslint-plugin-cypress-silent-pass](https://github.com/voidmatcha/eslint-plugin-cypress-silent-pass)** — the retired Cypress sibling (superseded by `cypress/no-unnecessary-assertions`; an assertion-clarity check, not an always-pass check).
 - **[e2e-skills](https://github.com/voidmatcha/e2e-skills)** — the full agent-skill catalog: 24 Playwright/Cypress anti-patterns, including the **semantic** silent-pass smells a linter can't decide (name↔assertion mismatch, missing post-state checks, missing auth setup, …).
 
 This plugin is the mechanical, AST-decidable slice; `e2e-skills` covers the rest.
